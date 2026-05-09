@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { AppLayout } from "@/components/AppLayout";
 import { useTaskStore } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { updateProfile } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -56,18 +56,13 @@ function Settings() {
   const saveProfile = async () => {
     if (!user) return;
     setSaving(true);
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({ display_name: displayName, avatar_url: avatarUrl || null })
-      .eq("id", user.id)
-      .select("id, display_name, avatar_url")
-      .single();
+    const updated = updateProfile({ username: displayName, avatarUrl: avatarUrl || null });
     setSaving(false);
-    if (error) {
-      toast.error(error.message);
+    if (!updated) {
+      toast.error("Unable to update profile");
       return;
     }
-    setProfile(data as typeof profile);
+    setProfile(updated);
     toast.success("Profile updated");
   };
 

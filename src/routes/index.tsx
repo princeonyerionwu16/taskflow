@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap, BarChart3, CheckCircle2, Layers, Command } from "lucide-react";
 import { FloatingOrbs } from "@/components/FloatingOrbs";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,6 +31,9 @@ const features = [
 ];
 
 function Landing() {
+  const { user, profile } = useAuth();
+  const name = profile?.display_name || user?.email?.split("@")[0] || null;
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <FloatingOrbs />
@@ -49,12 +53,21 @@ function Landing() {
           <Link to="/analytics" className="hover:text-foreground transition-colors">Analytics</Link>
           <Link to="/tasks" className="hover:text-foreground transition-colors">Tasks</Link>
         </nav>
-        <Link
-          to="/auth"
-          className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-        >
-          Open app <ArrowRight className="size-3.5" />
-        </Link>
+        {name ? (
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+          >
+            Continue as {name} <ArrowRight className="size-3.5" />
+          </Link>
+        ) : (
+          <Link
+            to="/auth"
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+          >
+            Open app <ArrowRight className="size-3.5" />
+          </Link>
+        )}
       </header>
 
       <section className="relative z-10 px-6 lg:px-12 pt-16 lg:pt-28 pb-20 max-w-6xl mx-auto text-center">
@@ -89,6 +102,17 @@ function Landing() {
           Inspired by Linear, Notion, and Arc.
         </motion.p>
 
+        {name ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="mt-8 text-sm text-muted-foreground"
+          >
+            Welcome back, <span className="font-semibold text-foreground">{name}</span>.
+          </motion.div>
+        ) : null}
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,11 +120,11 @@ function Landing() {
           className="mt-10 flex items-center justify-center gap-3 flex-wrap"
         >
           <Link
-            to="/auth"
+            to={name ? "/dashboard" : "/auth"}
             className="group relative inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-hero text-white font-medium shadow-elegant hover:scale-[1.02] active:scale-[0.98] transition-transform"
           >
             <span className="absolute inset-0 rounded-full bg-gradient-hero blur-xl opacity-50 -z-10 group-hover:opacity-80 transition-opacity" />
-            Get started free
+            {name ? "Continue to your dashboard" : "Get started free"}
             <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
           <Link
@@ -201,8 +225,41 @@ function Landing() {
         </div>
       </section>
 
-      <footer className="relative z-10 px-6 lg:px-12 py-10 text-center text-xs text-muted-foreground">
-        Built with care · TaskFlow Pro · 2026
+      <footer className="relative z-10 px-6 lg:px-12 py-16 bg-background/80 border-t border-white/10">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">TaskFlow Pro</h2>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground max-w-xl">
+                A polished productivity workspace built for fast decision-making, clear priorities, and calm focus. Manage tasks, analytics, and workflows in one sleek dashboard.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Quick links</h3>
+                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <li><a href="/" className="hover:text-foreground transition-colors">Home</a></li>
+                  <li><a href="/auth" className="hover:text-foreground transition-colors">Open app</a></li>
+                  <li><a href="/tasks" className="hover:text-foreground transition-colors">Tasks</a></li>
+                  <li><a href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Support</h3>
+                <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <li>support@taskflowpro.com</li>
+                  <li>Documentation</li>
+                  <li>Privacy</li>
+                  <li>Terms</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:justify-between">
+            <span>© 2026 TaskFlow Pro. All rights reserved.</span>
+            <span>Designed for fast, calm workflows.</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

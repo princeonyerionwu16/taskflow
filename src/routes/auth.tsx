@@ -2,12 +2,11 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Zap, Mail, Lock, Loader2, ArrowRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { FloatingOrbs } from "@/components/FloatingOrbs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getCurrentUser, login, register, isValidEmail } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -28,32 +27,32 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate({ to: "/dashboard" });
-    });
+    const current = getCurrentUser();
+    if (current) navigate({ to: "/dashboard" });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "signup") {
+      setMode("signup");
+    }
   }, [navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { display_name: name || email.split("@")[0] },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created! Check your email to verify.");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Welcome back");
-        navigate({ to: "/dashboard" });
+      if (!isValidEmail(email)) {
+        throw new Error("Please enter a valid email address.");
       }
+
+      if (mode === "signup") {
+        register(email, password, name);
+        toast.success("Welcome to TaskFlow Pro!");
+      } else {
+        login(email, password);
+        toast.success("Welcome back");
+      }
+      navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -63,16 +62,8 @@ function AuthPage() {
 
   const oauth = async (provider: "google" | "apple") => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: `${window.location.origin}/dashboard`,
-    });
-    if (result.error) {
-      toast.error("Sign in failed");
-      setLoading(false);
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard" });
+    toast("Use email and password to sign in.");
+    setLoading(false);
   };
 
   return (
@@ -99,11 +90,11 @@ function AuthPage() {
           </p>
 
           <div className="mt-6 grid gap-2">
-            <Button type="button" variant="outline" disabled={loading} onClick={() => oauth("google")}>
+            <Button type="button" variant="outline" disabled={loading} onClick={() => oauth("google") }>
               <svg className="size-4" viewBox="0 0 24 24"><path fill="currentColor" d="M21.35 11.1H12v3.2h5.35c-.23 1.4-1.6 4.1-5.35 4.1-3.22 0-5.85-2.66-5.85-5.95s2.63-5.95 5.85-5.95c1.83 0 3.06.78 3.76 1.45l2.56-2.47C16.7 3.94 14.6 3 12 3 6.98 3 2.9 7.04 2.9 12s4.08 9 9.1 9c5.25 0 8.73-3.69 8.73-8.88 0-.6-.07-1.05-.15-1.52z"/></svg>
               Continue with Google
             </Button>
-            <Button type="button" variant="outline" disabled={loading} onClick={() => oauth("apple")}>
+            <Button type="button" variant="outline" disabled={loading} onClick={() => oauth("apple") }>
               <svg className="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16.365 1.43c0 1.14-.43 2.22-1.16 3.04-.79.9-2.06 1.6-3.13 1.5-.13-1.1.4-2.25 1.13-3.05.81-.9 2.18-1.57 3.16-1.49zM20 17.36c-.55 1.27-.81 1.83-1.52 2.95-.99 1.55-2.39 3.49-4.13 3.5-1.55.02-1.95-1-4.05-.99-2.1.01-2.54 1.01-4.09.99-1.74-.02-3.07-1.77-4.06-3.32C-.6 15.43-.91 8.92 2.55 6.42c1.23-.89 2.61-1.37 3.96-1.37 1.38 0 2.24.75 3.96.75 1.66 0 2.67-.75 4.27-.75 1.21 0 2.5.66 3.42 1.79-3.01 1.65-2.52 5.95.84 6.52z"/></svg>
               Continue with Apple
             </Button>

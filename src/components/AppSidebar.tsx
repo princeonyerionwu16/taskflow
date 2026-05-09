@@ -2,7 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, CheckSquare, BarChart3, Settings, Sparkles, Zap, LogOut } from "lucide-react";
 import { useTaskStore } from "@/lib/store";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { logout } from "@/lib/auth";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -20,11 +20,11 @@ export function AppSidebar() {
   const done = tasks.filter((t) => t.completed).length;
   const rate = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
 
-  const name = profile?.display_name || user?.email?.split("@")[0] || "You";
-  const initials = name.slice(0, 2).toUpperCase();
+  const name = profile?.username || user?.username || user?.email?.split("@")[0] || "You";
+  const initials = profile?.initials || user?.initials || name.slice(0, 2).toUpperCase();
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = () => {
+    logout();
     navigate({ to: "/auth" });
   };
 
@@ -44,8 +44,8 @@ export function AppSidebar() {
       </Link>
 
       <div className="glass rounded-2xl p-3 flex items-center gap-2.5">
-        {profile?.avatar_url ? (
-          <img src={profile.avatar_url} alt={name} className="size-8 rounded-xl object-cover" />
+        {profile?.avatarUrl ? (
+          <img src={profile.avatarUrl} alt={name} className="size-8 rounded-xl object-cover" />
         ) : (
           <div className="size-8 rounded-xl bg-gradient-hero grid place-items-center text-xs font-semibold">
             {initials}
